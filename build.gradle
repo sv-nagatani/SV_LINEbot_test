@@ -36,5 +36,5 @@ tasks.named('test') {
 }
 
 bootWar {
-	setArchiveName 'sv_linebot_test.war'
+	setArchiveFileName 'sv_linebot_test.war'
 }
