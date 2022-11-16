@@ -20,21 +20,24 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @SpringBootApplication
 public class KitchenSinkApplication {
-	private static final Logger logger = LoggerFactory.getLogger(KitchenSinkApplication.class);
+
+//	private final static Logger logger = LoggerFactory.getLogger(KitchenSinkApplication.class);
 	
 	static Path downloadedContentDir;
 
-    public static void main(String[] args) throws IOException {
-        downloadedContentDir = Files.createTempDirectory("line-bot");
-        logger.debug("downloadedContentDir: " + downloadedContentDir.toString());
-        SpringApplication.run(KitchenSinkApplication.class, args);
-    }
+	public static void main(String[] args) throws IOException {
+		downloadedContentDir = Files.createTempDirectory("line-bot");
+//		logger.debug("downloadedContentDir: " + downloadedContentDir.toString());
+	  log.debug("downloadedContentDir: " + downloadedContentDir.toString());
+		SpringApplication.run(KitchenSinkApplication.class, args);
+	}
 
 }

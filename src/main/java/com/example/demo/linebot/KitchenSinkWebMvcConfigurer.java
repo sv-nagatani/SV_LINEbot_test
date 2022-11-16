@@ -25,15 +25,15 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @Slf4j
 public class KitchenSinkWebMvcConfigurer implements WebMvcConfigurer {
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
-        String downloadedContentUri = KitchenSinkApplication.downloadedContentDir
-                .toUri().toASCIIString();
-        log.info("downloaded dir: {}", downloadedContentUri);
-        registry.addResourceHandler("/downloaded/**")
-                .addResourceLocations(downloadedContentUri);
-        registry.addResourceHandler("/static/**")
-                .addResourceLocations("classpath:/static/");
-    }
+		String downloadedContentUri = KitchenSinkApplication.downloadedContentDir
+				.toUri().toASCIIString();
+		log.info("downloaded dir: {}", downloadedContentUri);
+		registry.addResourceHandler("/downloaded/**")
+				.addResourceLocations(downloadedContentUri);
+		registry.addResourceHandler("/static/**")
+				.addResourceLocations("classpath:/static/");
+	}
 }

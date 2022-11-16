@@ -27,8 +27,12 @@ dependencies {
 	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-	implementation 'org.slf4j:slf4j-archetype:1.4.2'
-	implementation 'org.slf4j:slf4j-simple:2.0.3'
+	// ログ出力用
+//	implementation 'org.slf4j:slf4j-archetype:1.4.2'
+//	implementation 'org.slf4j:slf4j-simple:2.0.3'
+//	implementation 'ch.qos.logback:logback-classic:1.4.4'
+
+	// LINE Messaging API用
 	implementation 'com.linecorp.bot:line-bot-spring-boot:5.0.3'
 	implementation 'com.google.guava:guava:31.1-jre'
 }
@@ -38,5 +42,6 @@ tasks.named('test') {
 }
 
 bootWar {
+	// ビルド時に生成されるwarファイル名を指定
 	setArchiveFileName 'sv_linebot_test.war'
 }
