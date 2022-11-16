@@ -29,14 +29,16 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootApplication
 public class KitchenSinkApplication {
 
-//	private final static Logger logger = LoggerFactory.getLogger(KitchenSinkApplication.class);
-	
 	static Path downloadedContentDir;
 
 	public static void main(String[] args) throws IOException {
 		downloadedContentDir = Files.createTempDirectory("line-bot");
-//		logger.debug("downloadedContentDir: " + downloadedContentDir.toString());
-	  log.debug("downloadedContentDir: " + downloadedContentDir.toString());
+		if (downloadedContentDir == null) {
+		// Tempディレクトリの生成が出来なかった場合、
+			// ログを出力して起動終了
+			log.info("downloadedContentDir is null.");
+			return;
+		}
 		SpringApplication.run(KitchenSinkApplication.class, args);
 	}
 

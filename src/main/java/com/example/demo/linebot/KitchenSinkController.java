@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,8 +124,11 @@ public class KitchenSinkController {
 	@EventMapping
 	public void handleLocationMessageEvent(MessageEvent<LocationMessageContent> event) {
 		LocationMessageContent locationMessage = event.getMessage();
+		// titile=null対策
+		String title = locationMessage.getTitle() == null ? locationMessage.getAddress() : locationMessage.getTitle();
 		reply(event.getReplyToken(), new LocationMessage(
-				locationMessage.getTitle(),
+				//locationMessage.getTitle(),
+				title,
 				locationMessage.getAddress(),
 				locationMessage.getLatitude(),
 				locationMessage.getLongitude()
@@ -136,7 +138,7 @@ public class KitchenSinkController {
 	@EventMapping
 	public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) throws IOException {
 		// You need to install ImageMagick
-		// test
+		// handleHeavyContent()メソッドとその呼び出し元のラムダ式+Consumerインタフェースの使用をやめ、メディア種別別のメソッドに分解 STA
 		/*
 		handleHeavyContent(
 				event.getReplyToken(),
@@ -164,45 +166,15 @@ public class KitchenSinkController {
 		handleHeavyContent4Image(
 				event.getReplyToken(),
 				event.getMessage().getId(),
-				event
+				event.getMessage().getContentProvider()
 				);
+		// handleHeavyContent()メソッドとその呼び出し元のラムダ式+Consumerインタフェースの使用をやめ、メディア種別別のメソッドに分解 END
 	}
-	
-	// test
-	private void handleHeavyContent4Image(String replyToken, String messageId, MessageEvent<ImageMessageContent> event) {
-		final MessageContentResponse response;
-		try {
-			response = lineBlobClient.getMessageContent(messageId).get();
-		} catch (InterruptedException | ExecutionException e) {
-			reply(replyToken, new TextMessage("Cannot get image: " + e.getMessage()));
-			throw new RuntimeException(e);
-		}
-
-		try {
-			final ContentProvider provider = event.getMessage().getContentProvider();
-			final DownloadedContent jpg;
-			final DownloadedContent previewImg;
-			if (provider.isExternal()) {
-				jpg = new DownloadedContent(null, provider.getOriginalContentUrl());
-				previewImg = new DownloadedContent(null, provider.getPreviewImageUrl());
-			} else {
-				jpg = saveContent("jpg", response);
-				previewImg = createTempFile("jpg");
-				system(
-						"convert",
-						"-resize", "240x",
-						jpg.path.toString(),
-						previewImg.path.toString());
-			}
-			reply(event.getReplyToken(), new ImageMessage(jpg.getUri(), previewImg.getUri()));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	// test
 	
 	@EventMapping
 	public void handleAudioMessageEvent(MessageEvent<AudioMessageContent> event) throws IOException {
+		// handleHeavyContent()メソッドとその呼び出し元のラムダ式+Consumerインタフェースの使用をやめ、メディア種別別のメソッドに分解 STA
+		/*
 		handleHeavyContent(
 				event.getReplyToken(),
 				event.getMessage().getId(),
@@ -216,17 +188,22 @@ public class KitchenSinkController {
 					}
 					reply(event.getReplyToken(), new AudioMessage(mp4.getUri(), 100L));
 				});
+		*/
+		handleHeavyContent4Audio(
+				event.getReplyToken(),
+				event.getMessage().getId(),
+				event.getMessage().getContentProvider()
+				);
+		// handleHeavyContent()メソッドとその呼び出し元のラムダ式+Consumerインタフェースの使用をやめ、メディア種別別のメソッドに分解 END
 	}
-
-// test
-
-// test
 
 	@EventMapping
 	public void handleVideoMessageEvent(MessageEvent<VideoMessageContent> event) throws IOException {
 		log.info("Got video message: duration={}ms", event.getMessage().getDuration());
 
 		// You need to install ffmpeg and ImageMagick.
+		// handleHeavyContent()メソッドとその呼び出し元のラムダ式+Consumerインタフェースの使用をやめ、メディア種別別のメソッドに分解 STA
+		/*
 		handleHeavyContent(
 				event.getReplyToken(),
 				event.getMessage().getId(),
@@ -253,6 +230,13 @@ public class KitchenSinkController {
 									  .trackingId(trackingId)
 									  .build());
 				});
+		*/
+		handleHeavyContent4Video(
+				event.getReplyToken(),
+				event.getMessage().getId(),
+				event.getMessage().getContentProvider()
+				);
+		// handleHeavyContent()メソッドとその呼び出し元のラムダ式+Consumerインタフェースの使用をやめ、メディア種別別のメソッドに分解 END
 	}
 
 	@EventMapping
@@ -366,6 +350,8 @@ public class KitchenSinkController {
 		this.reply(replyToken, new TextMessage(message));
 	}
 
+	// handleHeavyContent()メソッドとその呼び出し元のラムダ式+Consumerインタフェースの使用をやめ、メディア種別別のメソッドに分解 STA
+	/*
 	private void handleHeavyContent(String replyToken, String messageId,
 									Consumer<MessageContentResponse> messageConsumer) {
 		final MessageContentResponse response;
@@ -378,6 +364,101 @@ public class KitchenSinkController {
 		}
 		messageConsumer.accept(response);
 	}
+	*/
+	private void handleHeavyContent4Image(String replyToken, String messageId, ContentProvider provider) {
+		final MessageContentResponse response;
+		try {
+			response = lineBlobClient.getMessageContent(messageId).get();
+		} catch (InterruptedException | ExecutionException e) {
+			reply(replyToken, new TextMessage("Cannot get image: " + e.getMessage()));
+			throw new RuntimeException(e);
+		}
+
+		try {
+			// You need to install ImageMagick
+			final DownloadedContent jpg;
+			final DownloadedContent previewImg;
+			if (provider.isExternal()) {
+				jpg = new DownloadedContent(null, provider.getOriginalContentUrl());
+				previewImg = new DownloadedContent(null, provider.getPreviewImageUrl());
+			} else {
+				jpg = saveContent("jpg", response);
+				previewImg = createTempFile("jpg");
+				system(
+						//"convert",
+						"magick",
+						"convert",
+						"-resize", "240x",
+						jpg.path.toString(),
+						previewImg.path.toString());
+			}
+			reply(replyToken, new ImageMessage(jpg.getUri(), previewImg.getUri()));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void handleHeavyContent4Audio(String replyToken, String messageId, ContentProvider provider) {
+		final MessageContentResponse response;
+		try {
+			response = lineBlobClient.getMessageContent(messageId).get();
+		} catch (InterruptedException | ExecutionException e) {
+			reply(replyToken, new TextMessage("Cannot get audio: " + e.getMessage()));
+			throw new RuntimeException(e);
+		}
+		
+		try {
+			final DownloadedContent mp4;
+			if (provider.isExternal()) {
+				mp4 = new DownloadedContent(null, provider.getOriginalContentUrl());
+			} else {
+				mp4 = saveContent("mp4", response);
+			}
+			reply(replyToken, new AudioMessage(mp4.getUri(), 100L));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void handleHeavyContent4Video(String replyToken, String messageId, ContentProvider provider) {
+		final MessageContentResponse response;
+		try {
+			response = lineBlobClient.getMessageContent(messageId).get();
+		} catch (InterruptedException | ExecutionException e) {
+			reply(replyToken, new TextMessage("Cannot get video: " + e.getMessage()));
+			throw new RuntimeException(e);
+		}
+		
+		try {
+			// You need to install ffmpeg and ImageMagick.
+			final DownloadedContent mp4;
+			final DownloadedContent previewImg;
+			if (provider.isExternal()) {
+				mp4 = new DownloadedContent(null, provider.getOriginalContentUrl());
+				previewImg = new DownloadedContent(null, provider.getPreviewImageUrl());
+			} else {
+				mp4 = saveContent("mp4", response);
+				previewImg = createTempFile("jpg");
+				system(
+						//"convert",
+						"magick",
+						"convert",
+						mp4.path + "[0]",
+						previewImg.path.toString());
+			}
+			String trackingId = UUID.randomUUID().toString();
+			log.info("Sending video message with trackingId={}", trackingId);
+			reply(replyToken,
+					VideoMessage.builder()
+						.originalContentUrl(mp4.getUri())
+						.previewImageUrl(previewImg.uri)
+						.trackingId(trackingId)
+						.build());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	// handleHeavyContent()メソッドとその呼び出し元のラムダ式+Consumerインタフェースの使用をやめ、メディア種別別のメソッドに分解 END
 
 	private void handleSticker(String replyToken, StickerMessageContent content) {
 		reply(replyToken, new StickerMessage(
